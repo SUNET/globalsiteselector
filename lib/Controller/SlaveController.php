@@ -24,6 +24,7 @@ namespace OCA\GlobalSiteSelector\Controller;
 
 use OC\Authentication\Token\IToken;
 use OCA\GlobalSiteSelector\AppInfo\Application;
+use OCA\GlobalSiteSelector\Events\AfterLoginOnSlaveEvent;
 use OCA\GlobalSiteSelector\Exceptions\MasterUrlException;
 use OCA\GlobalSiteSelector\GlobalSiteSelector;
 use OCA\GlobalSiteSelector\Service\SlaveService;
@@ -37,6 +38,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\DataResponse;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\OCSController;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\IConfig;
 use OCP\IRequest;
 use OCP\ISession;
@@ -63,6 +65,7 @@ class SlaveController extends OCSController {
 		private IUserSession $userSession,
 		private IURLGenerator $urlGenerator,
 		private ICrypto $crypto,
+		private IEventDispatcher $eventDispatcher,
 		private TokenHandler $tokenHandler,
 		private IUserManager $userManager,
 		private UserBackend $userBackend,
@@ -152,6 +155,13 @@ class SlaveController extends OCSController {
 
 		$home = $this->urlGenerator->getAbsoluteURL($target);
 		$this->logger->debug('redirecting to ' . $home);
+		$user = $this->userManager->get($uid);
+		if ($user instanceof IUser) {
+			$this->logger->debug('emiting AfterLoginOnSlaveEvent event');
+			$this->eventDispatcher->dispatchTyped(
+				new AfterLoginOnSlaveEvent($user)
+			);
+		}
 
 		return new RedirectResponse($home);
 	}
