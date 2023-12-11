@@ -184,7 +184,7 @@ class SlaveController extends OCSController {
         $appToken = $data['token'];
 
         $redirectUrl =
-          'nc://login/server:' . $target . '&user:' . urlencode($uid) . '&password:' . urlencode(
+          'nc://login/server:' . $redirectUrl . '&user:' . urlencode($uid) . '&password:' . urlencode(
             $appToken
           );
       }
