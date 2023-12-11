@@ -231,35 +231,10 @@ class Master {
 	 * @throws Exception
 	 */
 	protected function redirectUser($uid, $password, $location, array $options = []) {
-		$isClient = $this->request->isUserAgent(
-			[
-				IRequest::USER_AGENT_CLIENT_IOS,
-				IRequest::USER_AGENT_CLIENT_ANDROID,
-				IRequest::USER_AGENT_CLIENT_DESKTOP,
-				'/^.*\(Android\)$/'
-			]
-		);
-
-		$requestUri = $this->request->getRequestUri();
-		// check for both possible direct webdav end-points
-		$isDirectWebDavAccess = strpos($requestUri, 'remote.php/webdav') !== false;
-		$isDirectWebDavAccess = $isDirectWebDavAccess || strpos($requestUri, 'remote.php/dav') !== false;
-		// direct webdav access with old client or general purpose webdav clients
-		if ($isClient && $isDirectWebDavAccess) {
-			$this->logger->debug('redirectUser: client direct webdav request');
-			$redirectUrl = $location . '/remote.php/webdav/';
-		} elseif ($isClient && !$isDirectWebDavAccess) {
-			$this->logger->debug('redirectUser: client request generating apptoken');
-			$appToken = $this->getAppToken($location, $uid, $password, $options);
-			$redirectUrl =
-				'nc://login/server:' . $location . '&user:' . urlencode($uid) . '&password:' . urlencode(
-					$appToken
-				);
-		} else {
-			$this->logger->debug('redirectUser: direct login so forward to target node');
-			$jwt = $this->createJwt($uid, $password, $options);
-			$redirectUrl = $location . '/index.php/apps/globalsiteselector/autologin?jwt=' . $jwt;
-		}
+    $this->logger->debug('redirectUser: direct login so forward to target node');
+    $jwt = $this->createJwt($uid, $password, $options);
+    $redirectUrl = $location . '/index.php/apps/globalsiteselector/autologin?jwt=' . $jwt;
+		
 
 		$this->logger->debug('redirectUser: redirecting to: ' . $redirectUrl);
 		header('Location: ' . $redirectUrl, true, 302);
@@ -288,54 +263,6 @@ class Master {
 		return $jwt;
 	}
 
-	/**
-	 * get app token from the server the user is located
-	 *
-	 * @param string $location
-	 * @param string $uid
-	 * @param string $password
-	 * @param array $options
-	 *
-	 * @return string
-	 * @throws Exception
-	 */
-	protected function getAppToken($location, $uid, $password, $options) {
-		$client = $this->clientService->newClient();
-		$jwt = $this->createJwt($uid, $password, $options);
-
-		$response = $client->get(
-			$location . '/ocs/v2.php/apps/globalsiteselector/v1/createapptoken',
-			$this->lookup->configureClient(
-				[
-					'headers' => [
-						'OCS-APIRequest' => 'true'
-					],
-					'verify' => !$this->config->getSystemValueBool('gss.selfsigned.allow', false),
-					'query' => [
-						'format' => 'json',
-						'jwt' => $jwt
-					]
-				]
-			)
-		);
-
-		$body = $response->getBody();
-
-		$data = json_decode($body, true);
-		$jsonErrorCode = json_last_error();
-		if ($jsonErrorCode !== JSON_ERROR_NONE) {
-			$info = 'getAppToken - Decoding the JSON failed ' .
-					$jsonErrorCode . ' ' .
-					json_last_error_msg();
-			throw new Exception($info);
-		}
-		if (!isset($data['ocs']['data']['token'])) {
-			$info = 'getAppToken - data doesn\'t contain token: ' . json_encode($data);
-			throw new Exception($info);
-		}
-
-		return $data['ocs']['data']['token'];
-	}
 
 	/**
 	 * add basic auth information to the URL
