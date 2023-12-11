@@ -150,35 +150,39 @@ class SlaveController extends OCSController {
 		$this->slaveService->updateUserById($uid);
 		$this->logger->debug('userdata updated on lus');
 
-    /* handle client login */
 		$redirectUrl = $this->urlGenerator->getAbsoluteURL($target);
 
-		$isClient = $this->request->isUserAgent(
-			[
-				IRequest::USER_AGENT_CLIENT_IOS,
-				IRequest::USER_AGENT_CLIENT_ANDROID,
-				IRequest::USER_AGENT_CLIENT_DESKTOP,
-				'/^.*\(Android\)$/'
-			]
-		);
+    /* see if we need to handle client login */
+    $clientFeatureEnabled = $this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false');
+    if($clientFeatureEnabled) {
 
-		$requestUri = $this->request->getRequestUri();
-		// check for both possible direct webdav end-points
-		$isDirectWebDavAccess = strpos($requestUri, 'remote.php/webdav') !== false;
-		$isDirectWebDavAccess = $isDirectWebDavAccess || strpos($requestUri, 'remote.php/dav') !== false;
-		// direct webdav access with old client or general purpose webdav clients
-		if ($isClient && $isDirectWebDavAccess) {
-			$this->logger->debug('redirectUser: client direct webdav request');
-			$redirectUrl = $target . '/remote.php/webdav/';
-		} elseif ($isClient && !$isDirectWebDavAccess) {
-			$this->logger->debug('redirectUser: client request generating apptoken');
-			$data = $this->createAppToken($jwt);
-      $appToken = $data['ocs']['data']['token'];
-			$redirectUrl =
-				'nc://login/server:' . $target . '&user:' . urlencode($uid) . '&password:' . urlencode(
-					$appToken
-				);
-		}
+      $isClient = $this->request->isUserAgent(
+        [
+          IRequest::USER_AGENT_CLIENT_IOS,
+          IRequest::USER_AGENT_CLIENT_ANDROID,
+          IRequest::USER_AGENT_CLIENT_DESKTOP,
+          '/^.*\(Android\)$/'
+        ]
+      );
+
+      $requestUri = $this->request->getRequestUri();
+      // check for both possible direct webdav end-points
+      $isDirectWebDavAccess = strpos($requestUri, 'remote.php/webdav') !== false;
+      $isDirectWebDavAccess = $isDirectWebDavAccess || strpos($requestUri, 'remote.php/dav') !== false;
+      // direct webdav access with old client or general purpose webdav clients
+      if ($isClient && $isDirectWebDavAccess) {
+        $this->logger->debug('redirectUser: client direct webdav request');
+        $redirectUrl = $target . '/remote.php/webdav/';
+      } elseif ($isClient && !$isDirectWebDavAccess) {
+        $this->logger->debug('redirectUser: client request generating apptoken');
+        $data = $this->createAppToken($jwt);
+        $appToken = $data['ocs']['data']['token'];
+        $redirectUrl =
+          'nc://login/server:' . $target . '&user:' . urlencode($uid) . '&password:' . urlencode(
+            $appToken
+          );
+      }
+    }
 
 		$this->logger->debug('redirecting to ' . $redirectUrl);
 
