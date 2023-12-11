@@ -155,6 +155,7 @@ class SlaveController extends OCSController {
     /* see if we need to handle client login */
     $clientFeatureEnabled = $this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false');
     if($clientFeatureEnabled) {
+      $this->logger->debug('Client redirect feature enabled');
 
       $isClient = $this->request->isUserAgent(
         [
@@ -175,8 +176,13 @@ class SlaveController extends OCSController {
         $redirectUrl = $target . '/remote.php/webdav/';
       } elseif ($isClient && !$isDirectWebDavAccess) {
         $this->logger->debug('redirectUser: client request generating apptoken');
-        $data = $this->createAppToken($jwt);
+        $data = $this->createAppToken($jwt)->getData();
+        if (!isset($data['ocs']['data']['token'])) {
+          $info = 'getAppToken - data doesn\'t contain token: ' . json_encode($data);
+          throw new \Exception($info);
+        }
         $appToken = $data['ocs']['data']['token'];
+
         $redirectUrl =
           'nc://login/server:' . $target . '&user:' . urlencode($uid) . '&password:' . urlencode(
             $appToken
