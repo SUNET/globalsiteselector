@@ -177,11 +177,11 @@ class SlaveController extends OCSController {
       } elseif ($isClient && !$isDirectWebDavAccess) {
         $this->logger->debug('redirectUser: client request generating apptoken');
         $data = $this->createAppToken($jwt)->getData();
-        if (!isset($data['ocs']['data']['token'])) {
+        if (!isset($data['token'])) {
           $info = 'getAppToken - data doesn\'t contain token: ' . json_encode($data);
           throw new \Exception($info);
         }
-        $appToken = $data['ocs']['data']['token'];
+        $appToken = $data['token'];
 
         $redirectUrl =
           'nc://login/server:' . $target . '&user:' . urlencode($uid) . '&password:' . urlencode(
