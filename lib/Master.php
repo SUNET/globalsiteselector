@@ -235,7 +235,7 @@ class Master {
     $jwt = $this->createJwt($uid, $password, $options);
     $redirectUrl = $location . '/index.php/apps/globalsiteselector/autologin?jwt=' . $jwt;
 		
-    $clientFeatureEnabled = $this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false');
+    $clientFeatureEnabled = filter_var($this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false'), FILTER_VALIDATE_BOOLEAN);
     if (!$clientFeatureEnabled) {
       $isClient = $this->request->isUserAgent(
         [

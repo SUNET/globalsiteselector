@@ -153,7 +153,7 @@ class SlaveController extends OCSController {
 		$redirectUrl = $this->urlGenerator->getAbsoluteURL($target);
 
     /* see if we need to handle client login */
-    $clientFeatureEnabled = $this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false');
+    $clientFeatureEnabled = filter_var($this->config->getAppValue('globalsiteselector', 'client_feature_enabled', 'false'), FILTER_VALIDATE_BOOLEAN);
     if($clientFeatureEnabled) {
       $this->logger->debug('Client redirect feature enabled');
 
