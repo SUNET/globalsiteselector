@@ -182,9 +182,10 @@ class SlaveController extends OCSController {
           throw new \Exception($info);
         }
         $appToken = $data['token'];
+        $home = $this->urlGenerator->getAbsoluteURL($target);
 
         $redirectUrl =
-          'nc://login/server:' . $redirectUrl . '&user:' . urlencode($uid) . '&password:' . urlencode(
+          'nc://login/server:' . $home . '&user:' . urlencode($uid) . '&password:' . urlencode(
             $appToken
           );
       }
